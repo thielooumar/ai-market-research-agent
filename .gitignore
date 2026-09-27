@@ -1,10 +1,26 @@
-# Authoring notes, not participant-facing
-context.md
+# Environments
+.venv/
+venv/
+env/
+ENV/
+.env
 
-# macOS noise
+# Python bytecode & cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+*.egg-info/
+
+# Git & OS
+.git/
+.gitignore
 .DS_Store
+Thumbs.db
 
-# record-demo artifacts (Playwright install + temp recording dir)
+# Temporary & build outputs
 node_modules/
-package-lock.json
 .video_tmp/
+dist/
+build/

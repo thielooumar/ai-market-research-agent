@@ -1,0 +1,6 @@
+version: "1.5.0"
+name: "b2b-interview-strategist"
+display_name: "B2B Target Scout & Interview Strategist"
+description: "Prioritizes candidate companies across multiple domains, visualizes domain overlaps with Venn diagrams, and crafts customized interview guides and outreach emails."
+agent_directory: "app"
+deployment_target: "cloud_run"

@@ -1,0 +1,17 @@
+# .gcloudignore: Exclude heavy local files from GCP deployment payload
+.git/
+.gitignore
+.venv/
+venv/
+env/
+ENV/
+.env
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+node_modules/
+.video_tmp/
+dist/
+build/

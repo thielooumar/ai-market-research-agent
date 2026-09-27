@@ -1,0 +1,17 @@
+# .dockerignore
+.git/
+.gitignore
+.venv/
+venv/
+env/
+ENV/
+.env
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+node_modules/
+.video_tmp/
+dist/
+build/
