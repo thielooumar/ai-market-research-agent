@@ -10,8 +10,16 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 import httpx
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
+
+class NoCacheStaticFiles(StaticFiles):
+    async def get_response(self, path: str, scope):
+        response = await super().get_response(path, scope)
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+        return response
 
 from app.tools import (
     generate_target_companies_by_ai,
@@ -56,8 +64,7 @@ def _auth_headers() -> dict[str, str]:
             pass
     return {"Content-Type": "application/json"}
 app = FastAPI()
-static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "static"))
-app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")
+
 
 
 @app.exception_handler(Exception)
@@ -67,6 +74,22 @@ async def _json_errors(request: Request, exc: Exception):
         content={
             "parts": [{"kind": "text", "text": f"Error: {type(exc).__name__}: {exc}"}]
         },
+    )
+
+
+@app.get("/")
+async def root():
+    index_path = os.path.join(os.path.dirname(__file__), "static", "index.html")
+    if not os.path.exists(index_path):
+        index_path = os.path.join(os.path.dirname(__file__), "..", "static", "index.html")
+    return FileResponse(
+        index_path,
+        media_type="text/html",
+        headers={
+            "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
+            "Pragma": "no-cache",
+            "Expires": "0"
+        }
     )
 
 
@@ -82,10 +105,11 @@ async def analyze(req: Request):
 
 @app.post("/api/market-research")
 async def market_research(req: Request):
-    """Direct API endpoint for AI Market Research by Solution Characteristics."""
+    """Direct API endpoint for AI Market Research by Solution Characteristics & Additional Criteria."""
     body = await req.json()
     sol_chars = body.get("solution_characteristics", "")
-    result = perform_ai_market_research(sol_chars)
+    additional_criteria = body.get("additional_criteria", "")
+    result = perform_ai_market_research(sol_chars, additional_criteria=additional_criteria)
     return JSONResponse(result)
 
 
@@ -151,6 +175,12 @@ async def chat(req: Request):
     # A2A client integration if AGENT_ENGINE_RESOURCE_NAME is set...
     # (keeps A2A streaming compatibility)
     return JSONResponse({"parts": [{"kind": "text", "text": "Processing complete."}]})
+
+
+static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "static"))
+if not os.path.exists(os.path.join(static_dir, "index.html")):
+    static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "static"))
+app.mount("/", NoCacheStaticFiles(directory=static_dir, html=True), name="static")
 
 
 

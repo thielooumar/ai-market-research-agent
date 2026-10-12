@@ -29,10 +29,10 @@ COPY frontend/ ./frontend/
 
 # Install python dependencies
 RUN pip install -e .
-# Debug startup checks – fails fast if imports or static dir are broken
-COPY debug_startup.py .
-RUN python debug_startup.py
+# Runtime startup checks – fail fast if imports or static dir are broken
+COPY entrypoint.sh /entrypoint.sh
+RUN sed -i 's/\r$//' /entrypoint.sh && chmod +x /entrypoint.sh
 
 # Bind host to 0.0.0.0 and port 8080 for GCP Agent Engine container health checks
 EXPOSE 8080
-CMD ["uvicorn", "frontend.main:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["/bin/sh", "/entrypoint.sh"]

@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>B2B Target Scout & Interview Strategist (AI Discovery Edition)</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Material+Symbols+Outlined">
+<style>
+  :root {
+    --primary: #1E293B;
+    --primary-accent: #2563EB;
+    --primary-hover: #1D4ED8;
+    --bg-main: #F8FAFC;
+    --card-bg: #FFFFFF;
+    --border-color: #E2E8F0;
+    --text-main: #0F172A;
+    --text-muted: #64748B;
+    --high-color: #DC2626;
+    --high-bg: #FEE2E2;
+    --med-color: #D97706;
+    --med-bg: #FEF3C7;
+    --low-color: #475569;
+    --low-bg: #F1F5F9;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  header {
+    background: var(--primary);
+    color: #fff;
+    padding: 0.75rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  header h1 { font-size: 1.15rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; }
+  header .badge { background: #3B82F6; font-size: 0.75rem; padding: 0.2rem 0.55rem; border-radius: 9999px; font-weight: 600; }
+
+  /* 3-Pane Layout */
+  .dashboard {
+    display: grid;
+    grid-template-columns: 360px 1fr 400px;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* Pane 1: Multi-Section Input */
+  .pane-input {
+    background: #fff;
+    border-right: 1px solid var(--border-color);
+    padding: 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    overflow-y: auto;
+  }
+  .pane-title { font-size: 0.95rem; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 0.4rem; }
+  
+  .section-card {
+    background: #F8FAFC;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 0.85rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    position: relative;
+  }
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--primary-accent);
+  }
+  .btn-remove-sec {
+    background: none;
+    border: none;
+    color: #EF4444;
+    cursor: pointer;
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+  }
+  .btn-remove-sec:hover { text-decoration: underline; }
+
+  .form-group { display: flex; flex-direction: column; gap: 0.25rem; }
+  label { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); }
+  input, textarea {
+    width: 100%;
+    padding: 0.5rem 0.65rem;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 0.85rem;
+    background: #fff;
+    transition: border-color 0.2s;
+  }
+  input:focus, textarea:focus { outline: none; border-color: var(--primary-accent); }
+  textarea { resize: vertical; min-height: 52px; }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.65rem 1rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: background-color 0.2s, transform 0.1s;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn-primary { background: var(--primary-accent); color: #fff; }
+  .btn-primary:hover { background: var(--primary-hover); }
+  .btn-secondary { background: #E2E8F0; color: var(--text-main); }
+  .btn-secondary:hover { background: #CBD5E1; }
+  .btn-outline { background: transparent; border: 1px stroke var(--primary-accent); color: var(--primary-accent); }
+  .btn-sm { padding: 0.35rem 0.65rem; font-size: 0.75rem; }
+
+  /* Pane 2: Center (Venn & AI Discovered List) */
+  .pane-center {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    padding: 1.2rem;
+    gap: 1.2rem;
+  }
+
+  .venn-card {
+    background: #fff;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+  }
+  .card-title { font-size: 0.95rem; font-weight: 700; }
+  .venn-container {
+    width: 100%;
+    min-height: 280px;
+    max-height: 380px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #F8FAFC;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .venn-container svg { width: 100%; height: auto; max-height: 360px; object-fit: contain; }
+
+  /* Company List Grid */
+  .company-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 0.75rem;
+  }
+  .company-card {
+    background: #fff;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .company-card:hover { border-color: var(--primary-accent); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.08); }
+  .company-card.active { border-color: var(--primary-accent); background: #EFF6FF; }
+  .comp-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.35rem; }
+  .comp-name { font-weight: 700; font-size: 0.9rem; }
+  .comp-type { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.3rem; }
+  .p-badge { font-size: 0.7rem; font-weight: 700; padding: 0.15rem 0.45rem; border-radius: 4px; }
+  .p-high { background: var(--high-bg); color: var(--high-color); }
+  .p-med { background: var(--med-bg); color: var(--med-color); }
+  .p-low { background: var(--low-bg); color: var(--low-color); }
+  .comp-domains { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.4rem; }
+  .d-tag { font-size: 0.7rem; background: #F1F5F9; color: #475569; padding: 0.1rem 0.35rem; border-radius: 4px; }
+
+  /* Pane 3: Details & Actions */
+  .pane-details {
+    background: #fff;
+    border-left: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .details-header {
+    padding: 1rem 1.2rem;
+    border-bottom: 1px solid var(--border-color);
+    background: #FAFAFA;
+  }
+  .details-title { font-size: 1.05rem; font-weight: 700; }
+  .tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border-color);
+    background: #fff;
+  }
+  .tab-btn {
+    flex: 1;
+    padding: 0.65rem 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-align: center;
+    border: none;
+    background: none;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    color: var(--text-muted);
+  }
+  .tab-btn.active { color: var(--primary-accent); border-bottom-color: var(--primary-accent); font-weight: 700; }
+  .tab-content { padding: 1.2rem; flex: 1; overflow-y: auto; display: none; }
+  .tab-content.active { display: block; }
+
+  .content-box {
+    background: #F8FAFC;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 0.85rem;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    font-family: inherit;
+    margin-top: 0.5rem;
+    max-height: 420px;
+    overflow-y: auto;
+  }
+  .link-item { display: flex; align-items: center; justify-content: space-between; padding: 0.55rem 0; border-bottom: 1px solid #EDF2F7; }
+  .link-item a { color: var(--primary-accent); text-decoration: none; font-weight: 500; font-size: 0.85rem; }
+  .link-item a:hover { text-decoration: underline; }
+
+  #toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #1E293B;
+    color: #fff;
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    z-index: 1000;
+  }
+  #toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>
+    <span class="material-symbols-outlined">auto_awesome</span>
+    B2B Target Scout & Interview Strategist
+  </h1>
+  <span class="badge" style="background:#10B981; font-weight:700;">v1.3.0 譛譁ｰ迚・(蜿榊ｾｩ隱ｿ謨ｴ讖溯・繝ｻ蜈ｨ繧ｻ繧ｯ繧ｷ繝ｧ繝ｳ蜑企勁蟇ｾ蠢・</span>
+</header>
+
+<div class="dashboard">
+  <!-- PANE 1: MULTI-SECTION INPUT -->
+  <aside class="pane-input">
+    <div class="pane-title">
+      <span class="material-symbols-outlined">dataset</span>
+      蛻・㍽繝ｻ繝ｦ繝ｼ繧ｹ繧ｱ繝ｼ繧ｹ險ｭ螳夲ｼ医・繝ｫ繝√そ繧ｯ繧ｷ繝ｧ繝ｳ・・    </div>
+
+    <div id="sectionsContainer" style="display: flex; flex-direction: column; gap: 0.85rem;">
+      <!-- Section Cards appended by JS -->
+    </div>
+
+    <button id="btnAddSection" class="btn btn-secondary btn-sm" style="width: 100%; border: 1px dashed #CBD5E1;">
+      <span class="material-symbols-outlined">add_circle</span>
+      譁ｰ縺励＞蛻・㍽繧ｻ繧ｯ繧ｷ繝ｧ繝ｳ繧定ｿｽ蜉
+    </button>
+
+    <button id="btnAnalyze" class="btn btn-primary" style="margin-top: 0.5rem;">
+      <span class="material-symbols-outlined">search_insights</span>
+      Gemini AI縺ｧ莨∵･ｭ逋ｺ謗・& 繝吶Φ蝗ｳ蛻・梵
+    </button>
+    <!-- Excluded Competitors Memory Box -->
+    <div class="pane-title" style="margin-top: 1rem;">
+      <span class="material-symbols-outlined">block</span>
+      髯､螟悶＠縺溘＞遶ｶ蜷井ｼ∵･ｭ (繝｡繝｢繝ｪ)
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+      <input id="excludedInput" type="text" placeholder="髯､螟紋ｼ∵･ｭ蜷阪ｒ蜈･蜉帙＠縺ｦEnter" style="padding:0.5rem; border:1px solid var(--border-color); border-radius:6px;">
+      <div id="excludedChips" style="display:flex; flex-wrap:wrap; gap:0.4rem;"></div>
+    </div>
+    <!-- Market Research Section -->
+    <div class="pane-title" style="margin-top: 1rem;">
+      <span class="material-symbols-outlined">insights</span>
+      AI 蟶ょｴ隱ｿ譟ｻ & 莨∵･ｭ驕ｸ螳壽擅莉ｶ
+    </div>
+    <div style="display:flex; flex-direction:column; gap:0.6rem;">
+      <div>
+        <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted); margin-bottom:0.2rem; display:block;">竭 繧ｽ繝ｪ繝･繝ｼ繧ｷ繝ｧ繝ｳ迚ｹ諤ｧ繝ｻ蠑ｷ縺ｿ</label>
+        <textarea id="marketCharInput" placeholder="萓・ AI繧堤畑縺・◆蜿礼匱豕ｨ繝・・繧ｿ縺ｮ蜿ｯ隕門喧縺ｨ蝨ｨ蠎ｫ雉・≡郢ｰ繧頑怙驕ｩ蛹・.." rows="2" style="width:100%; padding:0.5rem; border:1px solid var(--border-color); border-radius:6px; font-size:0.8rem;"></textarea>
+      </div>
+      <div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.2rem;">
+          <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted);">竭｡ 霑ｽ蜉縺ｮ驕ｸ螳壽擅莉ｶ繝ｻ蜆ｪ蜈郁ｦ∽ｻｶ (蜿榊ｾｩ隱ｿ謨ｴ逕ｨ)</label>
+          <span style="font-size:0.7rem; color:#2563EB; cursor:pointer; text-decoration:underline;" onclick="setSampleCriteria()">萓九ｒ蜈･蜉・/span>
+        </div>
+        <textarea id="marketAdditionalCriteria" placeholder="萓・ 繝ｭ繝懊ャ繝医∪縺溘・AI繝励Λ繝・ヨ繝輔か繝ｼ繝繧呈ｧ狗ｯ峨＠縺ｦ縺・ｋ繝｡繝ｼ繧ｫ繝ｼ繧貞━蜈医∬・蠕句喧繧呈耳騾ｲ縺吶ｋ莨∵･ｭ縲∫ｭ・.." rows="2" style="width:100%; padding:0.5rem; border:1px solid var(--border-color); border-radius:6px; font-size:0.8rem;"></textarea>
+      </div>
+      <button id="btnMarketResearch" class="btn btn-primary btn-sm" style="width:100%;">
+        <span class="material-symbols-outlined">analytics</span>
+        譚｡莉ｶ繧貞渚譏縺励※蟶ょｴ隱ｿ譟ｻ繧貞ｮ溯｡・/ 蜀崎ｪｿ謨ｴ
+      </button>
+    </div>
+    <div id="marketResearchResults" style="margin-top:0.75rem; overflow-x:auto;"></div>
+  </aside>
+
+  <!-- PANE 2: VENN DIAGRAM & AI GENERATED CATALOG -->
+  <main class="pane-center">
+    <!-- Market Research Matrix Card -->
+    <section class="venn-card" id="marketResearchSectionCard" style="display: none; margin-bottom: 1.5rem; background: #ffffff; border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem;">
+      <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <div class="card-title" style="font-weight: 700; font-size: 1.05rem; color: #1E293B; display: flex; align-items: center; gap: 0.5rem;">
+          <span class="material-symbols-outlined" style="color: #2563EB;">analytics</span>
+          AI 蟶ょｴ隱ｿ譟ｻ繝槭ヨ繝ｪ繝・け繧ｹ邨先棡・医た繝ｪ繝･繝ｼ繧ｷ繝ｧ繝ｳ迚ｹ諤ｧ蛻･・・        </div>
+        <span class="badge" style="background: #2563EB; color: #fff; padding: 0.25rem 0.6rem; border-radius: 9999px; font-size: 0.75rem;">Gemini 2.5 Flash 隱ｿ譟ｻ</span>
+      </div>
+      <div id="marketResearchResultsMain"></div>
+    </section>
+
+    <!-- Venn Diagram Card -->
+    <section class="venn-card">
+      <div class="card-header">
+        <div class="card-title">
+          隍・焚蛻・㍽縺ｮ驥崎､・・譫・(Venn Diagram)
+        </div>
+        <button id="btnDownloadVenn" class="btn btn-secondary btn-sm">
+          <span class="material-symbols-outlined">download</span>
+          繝吶Φ蝗ｳ繧堤判蜒丈ｿ晏ｭ・(.svg)
+        </button>
+      </div>
+      <div class="venn-container" id="vennContainer">
+        <!-- SVG will be injected here -->
+      </div>
+    </section>
+
+    <!-- AI Discovered Companies List -->
+    <section>
+      <div class="pane-title" style="margin-bottom: 0.75rem;">
+        <span class="material-symbols-outlined">stars</span>
+        Gemini AI 逋ｺ謗倥ち繝ｼ繧ｲ繝・ヨ莨∵･ｭ繝ｪ繧ｹ繝茨ｼ磯∈謚槭＠縺ｦ繧｢繧ｯ繧ｷ繝ｧ繝ｳ螳溯｡鯉ｼ・      </div>
+      <div class="company-grid" id="companyGrid">
+        <!-- Populated via JS -->
+      </div>
+    </section>
+  </main>
+
+  <!-- PANE 3: DETAILS & ACTIONS -->
+  <aside class="pane-details">
+    <div class="details-header">
+      <div class="details-title" id="selectedCompanyName">莨∵･ｭ繧帝∈謚槭＠縺ｦ縺上□縺輔＞</div>
+      <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.2rem;" id="selectedCompanySubtitle">
+        繝ｪ繧ｹ繝医°繧我ｼ∵･ｭ繧帝∈縺ｶ縺ｨ繧｢繧ｯ繧ｷ繝ｧ繝ｳ縺梧怏蜉ｹ縺ｫ縺ｪ繧翫∪縺・      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('tabContacts', event)">遯灘哨繝ｻ繝ｪ繝ｳ繧ｯ</button>
+      <button class="tab-btn" onclick="switchTab('tabEmail', event)">繝｡繝ｼ繝ｫ菴懈・</button>
+      <button class="tab-btn" onclick="switchTab('tabGuide', event)">雉ｪ蝠上・謌ｦ逡･(MD)</button>
+    </div>
+
+    <!-- Tab 1: Contacts -->
+    <div id="tabContacts" class="tab-content active">
+      <div id="contactDetails">
+        <div style="color: var(--text-muted); font-size: 0.85rem;">莨∵･ｭ繧帝∈謚槭＠縺ｦ縺上□縺輔＞縲・/div>
+      </div>
+    </div>
+
+    <!-- Tab 2: Email Generator -->
+    <div id="tabEmail" class="tab-content">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <label>謇楢ｨｺ繝｡繝ｼ繝ｫ繝・Φ繝励Ξ繝ｼ繝・/label>
+        <button id="btnCopyEmail" class="btn btn-secondary btn-sm">
+          <span class="material-symbols-outlined" style="font-size: 1rem;">content_copy</span>
+          繧ｳ繝斐・
+        </button>
+      </div>
+      <div id="emailDraftBox" class="content-box">莨∵･ｭ繧帝∈謚槭☆繧九→繝｡繝ｼ繝ｫ譁・擇縺檎函謌舌＆繧後∪縺吶・/div>
+    </div>
+
+    <!-- Tab 3: Interview Guide -->
+    <div id="tabGuide" class="tab-content">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <label>莉ｮ隱ｬ讀懆ｨｼ繧｢繧ｸ繧ｧ繝ｳ繝 & 雉ｪ蝠城・岼</label>
+        <button id="btnDownloadGuide" class="btn btn-primary btn-sm">
+          <span class="material-symbols-outlined" style="font-size: 1rem;">download</span>
+          .md 縺ｧ菫晏ｭ・        </button>
+      </div>
+      <div id="guideContentBox" class="content-box">莨∵･ｭ繧帝∈謚槭☆繧九→雉ｪ蝠上ぎ繧､繝峨′陦ｨ遉ｺ縺輔ｌ縺ｾ縺吶・/div>
+    </div>
+  </aside>
+</div>
+
+<div id="toast">繝｡繝・そ繝ｼ繧ｸ</div>
+
+<script>
+let sectionCount = 0;
+let currentVennSvg = "";
+let selectedCompany = null;
+let currentResults = [];
+
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.className = "show";
+  setTimeout(() => { t.className = ""; }, 2500);
+}
+
+function switchTab(tabId, evt) {
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+  document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+  if (evt && evt.target) evt.target.classList.add("active");
+  document.getElementById(tabId).classList.add("active");
+}
+
+function addSectionCard(domain = "", useCase = "", solution = "") {
+  sectionCount++;
+  const container = document.getElementById("sectionsContainer");
+  const card = document.createElement("div");
+  card.className = "section-card";
+  card.id = `sectionCard_${sectionCount}`;
+
+  card.innerHTML = `
+    <div class="section-header">
+      <span>繧ｻ繧ｯ繧ｷ繝ｧ繝ｳ ${sectionCount}</span>
+      <button class="btn-remove-sec" onclick="removeSectionCard(${sectionCount})"><span class="material-symbols-outlined" style="font-size: 0.9rem;">delete</span>蜑企勁</button>
+    </div>
+    <div class="form-group">
+      <label>蛻・㍽ (Domain)</label>
+      <input class="sec-domain" value="${domain}">
+    </div>
+    <div class="form-group">
+      <label>繝ｦ繝ｼ繧ｹ繧ｱ繝ｼ繧ｹ (Use Case)</label>
+      <input class="sec-usecase" value="${useCase}">
+    </div>
+    <div class="form-group">
+      <label>謠先｡医た繝ｪ繝･繝ｼ繧ｷ繝ｧ繝ｳ讎りｦ・(Solution Overview)</label>
+      <textarea class="sec-solution">${solution}</textarea>
+    </div>
+  `;
+  container.appendChild(card);
+}
+
+function removeSectionCard(id) {
+  const card = document.getElementById(`sectionCard_${id}`);
+  if (card) card.remove();
+}
+
+function getSectionsData() {
+  const cards = document.querySelectorAll(".section-card");
+  const sections = [];
+  cards.forEach(card => {
+    const domain = card.querySelector(".sec-domain").value.trim();
+    const useCase = card.querySelector(".sec-usecase").value.trim();
+    const solution = card.querySelector(".sec-solution").value.trim();
+    if (domain) {
+      sections.push({ domain, use_case: useCase, solution });
+    }
+  });
+  return sections;
+}
+
+async function runAiAnalysis() {
+  const sections = getSectionsData();
+  if (sections.length === 0) {
+    showToast("蟆代↑縺上→繧・縺､縺ｮ蛻・㍽繧ｻ繧ｯ繧ｷ繝ｧ繝ｳ繧貞・蜉帙＠縺ｦ縺上□縺輔＞縲・);
+    return;
+  }
+
+  // Gather excluded companies from chips
+  const excluded = Array.from(document.querySelectorAll("#excludedChips .chip"))
+    .map(chip => chip.textContent.trim());
+
+  showToast("Gemini AI縺後ち繝ｼ繧ｲ繝・ヨ莨∵･ｭ繧堤匱謗倅ｸｭ...");
+
+  try {
+    const res = await fetch("/api/analyze", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sections, excluded_companies: excluded })
+    });
+    const data = await res.json();
+    renderAnalysisData(data);
+  } catch (err) {
+    console.error("API Error:", err);
+    showToast("AI蛻・梵繧貞ｮ溯｡後＠縺ｾ縺励◆縲・);
+  }
+}
+
+function renderAnalysisData(data) {
+  const companies = data.prioritized_companies || [];
+  currentResults = companies;
+
+  // 1. Render Companies Grid
+  const grid = document.getElementById("companyGrid");
+  grid.innerHTML = "";
+
+  companies.forEach((c, idx) => {
+    const card = document.createElement("div");
+    card.className = "company-card" + (idx === 0 ? " active" : "");
+    const pClass = c.priority === "High" ? "p-high" : (c.priority === "Medium" ? "p-med" : "p-low");
+
+    card.innerHTML = `
+      <div class="comp-header">
+        <span class="comp-name">${c.company_name}</span>
+        <span class="p-badge ${pClass}">${c.priority} (${c.score}轤ｹ)</span>
+      </div>
+      <div class="comp-type">${c.company_type || 'AI逋ｺ謗倥ち繝ｼ繧ｲ繝・ヨ'}</div>
+      <div style="font-size: 0.75rem; color: #475569; line-height: 1.3;">
+        ${c.strategic_reason.slice(0, 48)}...
+      </div>
+      <div class="comp-domains">
+        ${c.matched_domains.map(d => `<span class="d-tag">${d}</span>`).join('')}
+      </div>
+    `;
+
+    card.onclick = () => selectCompany(c, card);
+    grid.appendChild(card);
+  });
+
+  // 2. Render SVG Venn Diagram
+  if (data.venn_diagram_data_url) {
+    fetch(data.venn_diagram_data_url)
+      .then(res => res.text())
+      .then(svgText => {
+        currentVennSvg = svgText;
+        document.getElementById("vennContainer").innerHTML = svgText;
+      })
+      .catch(() => {
+        renderFallbackVenn(data.domains || ["FinTech", "繧ｵ繝励Λ繧､繝√ぉ繝ｼ繝ｳ"], companies);
+      });
+  } else {
+    renderFallbackVenn(data.domains || ["FinTech", "繧ｵ繝励Λ繧､繝√ぉ繝ｼ繝ｳ"], companies);
+  }
+
+  // 3. Auto-select top company
+  if (companies.length > 0) {
+    selectCompany(companies[0], grid.children[0]);
+  }
+}
+
+function renderFallbackVenn(domains, companies) {
+  const d1 = domains[0] || "蛻・㍽1";
+  const d2 = domains[1] || "蛻・㍽2";
+
+  const both12 = companies.filter(c => c.matched_domains.includes(d1) && c.matched_domains.includes(d2)).map(c => c.company_name);
+  const only1 = companies.filter(c => c.matched_domains.includes(d1) && !c.matched_domains.includes(d2)).map(c => c.company_name);
+  const only2 = companies.filter(c => c.matched_domains.includes(d2) && !c.matched_domains.includes(d1)).map(c => c.company_name);
+
+  const svg = `<svg width="760" height="340" viewBox="0 0 760 340" xmlns="http://www.w3.org/2000/svg">
+  <rect width="100%" height="100%" fill="#F8FAFC" rx="10"/>
+  <circle cx="310" cy="180" r="120" fill="#3B82F6" fill-opacity="0.25" stroke="#2563EB" stroke-width="2.5"/>
+  <circle cx="450" cy="180" r="120" fill="#10B981" fill-opacity="0.25" stroke="#059669" stroke-width="2.5"/>
+  <text x="240" y="90" font-size="15" font-weight="bold" fill="#1D4ED8" text-anchor="middle">${d1}</text>
+  <text x="520" y="90" font-size="15" font-weight="bold" fill="#047857" text-anchor="middle">${d2}</text>
+  ${only1.map((c, i) => `<text x="250" y="${170 + i*22}" font-size="12" fill="#334155" text-anchor="middle">窶｢ ${c}</text>`).join('')}
+  ${only2.map((c, i) => `<text x="510" y="${170 + i*22}" font-size="12" fill="#334155" text-anchor="middle">窶｢ ${c}</text>`).join('')}
+  <rect x="330" y="145" width="100" height="24" rx="12" fill="#FEF3C7" stroke="#F59E0B" stroke-width="1.5"/>
+  <text x="380" y="161" font-size="10" font-weight="bold" fill="#B45309" text-anchor="middle">笘・譛蜆ｪ蜈・笘・/text>
+  ${both12.map((c, i) => `<text x="380" y="${190 + i*22}" font-size="12" font-weight="bold" fill="#92400E" text-anchor="middle">笘・${c}</text>`).join('')}
+</svg>`;
+
+  currentVennSvg = svg;
+  document.getElementById("vennContainer").innerHTML = svg;
+}
+
+async function selectCompany(comp, cardEl) {
+  selectedCompany = comp;
+  document.querySelectorAll(".company-card").forEach(c => c.classList.remove("active"));
+  if (cardEl) cardEl.classList.add("active");
+
+  document.getElementById("selectedCompanyName").textContent = comp.company_name;
+  document.getElementById("selectedCompanySubtitle").textContent = `蜆ｪ蜈亥ｺｦ: ${comp.priority} (${comp.score}轤ｹ) ﾂｷ 隧ｲ蠖灘・驥・ ${comp.matched_domains.join(', ')}`;
+
+  // Tab 1: Fetch Contacts
+  try {
+    const res = await fetch("/api/contact", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ company_name: comp.company_name })
+    });
+    const cinfo = await res.json();
+    document.getElementById("contactDetails").innerHTML = `
+      <div class="link-item">
+        <span>蜈ｬ蠑上し繧､繝・/span>
+        <a href="${cinfo.official_url}" target="_blank">Web繧帝幕縺・竊・/a>
+      </div>
+      <div class="link-item">
+        <span>IR / 蝠上＞蜷医ｏ縺・/span>
+        <a href="${cinfo.ir_url}" target="_blank">IR遯灘哨 竊・/a>
+      </div>
+      <div class="link-item">
+        <span>謗ｨ螂ｨ繧｢繝励Ο繝ｼ繝・Κ鄂ｲ</span>
+        <span style="font-weight: 600; font-size: 0.85rem;">${(cinfo.target_departments || []).join(' / ')}</span>
+      </div>
+      <div class="link-item">
+        <span>諠ｳ螳壹く繝ｼ繝槭Φ蠖ｹ閨ｷ</span>
+        <span style="font-weight: 500; font-size: 0.8rem; color: #475569;">${(cinfo.key_person_roles || []).join(', ')}</span>
+      </div>
+      <div style="margin-top: 0.75rem; padding: 0.75rem; background: #EFF6FF; border-radius: 6px; font-size: 0.8rem; color: #1E40AF;">
+        庁 <b>繧｢繝励Ο繝ｼ繝∵姶逡･</b>: ${cinfo.approach_channel_strategy || comp.interview_strategy}
+      </div>
+    `;
+  } catch (e) {
+    console.error("Contact fetch error:", e);
+  }
+
+  // Tab 2: Fetch Email Draft
+  const sections = getSectionsData();
+  const sol = sections[0] ? sections[0].solution : "AI蛻・梵繧ｽ繝ｪ繝･繝ｼ繧ｷ繝ｧ繝ｳ";
+  const uc = sections[0] ? sections[0].use_case : "";
+  try {
+    const res = await fetch("/api/email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ company_name: comp.company_name, solution_overview: sol, use_case: uc })
+    });
+    const edraft = await res.json();
+    document.getElementById("emailDraftBox").textContent = `莉ｶ蜷・ ${edraft.subject}\n\n${edraft.body}`;
+  } catch (e) {
+    console.error("Email fetch error:", e);
+  }
+
+  // Tab 3: Fetch Guide
+  try {
+    const res = await fetch("/api/guide", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ company_name: comp.company_name, solution_overview: sol, use_case: uc })
+    });
+    const gdata = await res.json();
+    document.getElementById("guideContentBox").textContent = gdata.markdown_content;
+  } catch (e) {
+    console.error("Guide fetch error:", e);
+  }
+}
+
+// Download Handlers
+document.getElementById("btnDownloadVenn").onclick = () => {
+  if (!currentVennSvg) return;
+  const blob = new Blob([currentVennSvg], { type: "image/svg+xml;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "venn_diagram.svg";
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast("繝吶Φ蝗ｳ逕ｻ蜒上ｒ繝繧ｦ繝ｳ繝ｭ繝ｼ繝峨＠縺ｾ縺励◆ (.svg)");
+};
+
+document.getElementById("btnDownloadGuide").onclick = () => {
+  if (!selectedCompany) return;
+  const text = document.getElementById("guideContentBox").textContent;
+  const blob = new Blob([text], { type: "text/markdown;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${selectedCompany.company_name}_interview_guide.md`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast("Markdown繝輔ぃ繧､繝ｫ繧偵ム繧ｦ繝ｳ繝ｭ繝ｼ繝峨＠縺ｾ縺励◆ (.md)");
+};
+
+document.getElementById("btnCopyEmail").onclick = () => {
+  const text = document.getElementById("emailDraftBox").textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    showToast("謇楢ｨｺ繝｡繝ｼ繝ｫ譁・擇繧偵け繝ｪ繝・・繝懊・繝峨↓繧ｳ繝斐・縺励∪縺励◆・・);
+  });
+};
+
+document.getElementById("btnAddSection").onclick = () => addSectionCard();
+document.getElementById("btnAnalyze").onclick = runAiAnalysis;
+document.getElementById("btnMarketResearch").onclick = runMarketResearch;
+
+function setSampleCriteria() {
+  const el = document.getElementById("marketAdditionalCriteria");
+  if (el) {
+    el.value = "繝ｭ繝懊ャ繝医∪縺溘・AI繝励Λ繝・ヨ繝輔か繝ｼ繝繧呈ｧ狗ｯ峨＠縺ｦ縺・ｋ繝｡繝ｼ繧ｫ繝ｼ繧貞━蜈医＠縲∬・蠕句喧繧呈耳騾ｲ縺吶ｋ蜈磯ｲ莨∵･ｭ繧呈歓蜃ｺ";
+    showToast("繧ｵ繝ｳ繝励Ν譚｡莉ｶ繧定ｨｭ螳壹＠縺ｾ縺励◆縲・);
+  }
+}
+
+async function runMarketResearch() {
+  const charInput = document.getElementById("marketCharInput").value.trim();
+  const criteriaInput = document.getElementById("marketAdditionalCriteria").value.trim();
+  const sections = getSectionsData();
+  const solText = charInput || (sections.map(s => `${s.domain}: ${s.solution}`).join(" / "));
+  
+  if (!solText && !criteriaInput) {
+    showToast("繧ｽ繝ｪ繝･繝ｼ繧ｷ繝ｧ繝ｳ迚ｹ諤ｧ縺ｾ縺溘・驕ｸ螳壽擅莉ｶ繧貞・蜉帙＠縺ｦ縺上□縺輔＞縲・);
+    return;
+  }
+
+  const containerSide = document.getElementById("marketResearchResults");
+  const containerMain = document.getElementById("marketResearchResultsMain");
+  const sectionCard = document.getElementById("marketResearchSectionCard");
+
+  if (sectionCard) sectionCard.style.display = "block";
+  if (containerSide) containerSide.innerHTML = `<div style="padding:0.75rem; font-size:0.8rem; color:#475569;">Gemini AI縺悟ｸょｴ隱ｿ譟ｻ繝ｻ譚｡莉ｶ蜿肴丐繧貞ｮ溯｡御ｸｭ...</div>`;
+  if (containerMain) containerMain.innerHTML = `<div style="padding:1.5rem; text-align:center; font-size:0.9rem; color:#475569;"><span class="material-symbols-outlined" style="vertical-align:middle; animation:spin 1s infinite linear;">sync</span> Gemini AI縺梧怙譁ｰ蟶ょｴ繝・・繧ｿ・育音諤ｧﾃ苓ｿｽ蜉蜆ｪ蜈域擅莉ｶ・峨ｒ蛻・梵繝ｻ逕滓・荳ｭ...</div>`;
+  
+  showToast("AI蟶ょｴ隱ｿ譟ｻ・郁ｿｽ蜉譚｡莉ｶ蜿肴丐・峨ｒ螳溯｡御ｸｭ...");
+
+  try {
+    const res = await fetch("/api/market-research", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ 
+        solution_characteristics: solText,
+        additional_criteria: criteriaInput
+      })
+    });
+    const data = await res.json();
+    renderMarketResearchData(data);
+  } catch (err) {
+    console.error("Market research error:", err);
+    if (containerSide) containerSide.innerHTML = `<div style="color:red; font-size:0.8rem;">隱ｿ譟ｻ繧ｨ繝ｩ繝ｼ縺檎匱逕溘＠縺ｾ縺励◆縲・/div>`;
+    if (containerMain) containerMain.innerHTML = `<div style="color:red; font-size:0.8rem;">隱ｿ譟ｻ繧ｨ繝ｩ繝ｼ縺檎匱逕溘＠縺ｾ縺励◆縲・/div>`;
+  }
+}
+
+function renderMarketResearchData(data) {
+  const containerSide = document.getElementById("marketResearchResults");
+  const containerMain = document.getElementById("marketResearchResultsMain");
+  const sectionCard = document.getElementById("marketResearchSectionCard");
+
+  const matrix = (data && (data.market_research_matrix || data.matrix)) || [];
+
+  if (matrix.length === 0) {
+    const errHtml = `<div style="padding:0.8rem; font-size:0.8rem; color:#DC2626; background:#FEE2E2; border-radius:6px;">蟶ょｴ隱ｿ譟ｻ繝・・繧ｿ縺悟叙蠕励〒縺阪∪縺帙ｓ縺ｧ縺励◆縲よ凾髢薙ｒ縺翫＞縺ｦ蜀榊ｮ溯｡後＠縺ｦ縺上□縺輔＞縲・/div>`;
+    if (containerSide) containerSide.innerHTML = errHtml;
+    if (containerMain) containerMain.innerHTML = errHtml;
+    return;
+  }
+
+  if (sectionCard) sectionCard.style.display = "block";
+
+  const appliedCriteriaHtml = data.additional_criteria 
+    ? `<div style="margin-top:0.4rem; font-size:0.75rem; color:#1E3A8A; font-weight:600;">識 <b>蜿肴丐縺輔ｌ縺溯ｿｽ蜉驕ｸ螳壽擅莉ｶ</b>: ${data.additional_criteria}</div>` 
+    : '';
+
+  // Build full rich main table HTML for Pane 2
+  let mainHtml = `
+    <div style="font-size:0.85rem; background:#EFF6FF; border:1px solid #BFDBFE; padding:0.85rem 1rem; border-radius:8px; margin-bottom:1rem; color:#1E40AF; line-height:1.5;">
+      <div>庁 <b>AI蟶ょｴ隱ｿ譟ｻ繧､繝ｳ繧ｵ繧､繝・/b>: ${data.summary_insight || ''}</div>
+      ${appliedCriteriaHtml}
+    </div>
+    <div style="overflow-x: auto;">
+      <table style="width:100%; border-collapse:collapse; font-size:0.8rem; background:#fff; border:1px solid #E2E8F0; border-radius:8px; overflow:hidden;">
+        <thead>
+          <tr style="background:#F8FAFC; text-align:left; color:#334155; font-size:0.8rem;">
+            <th style="padding:0.6rem 0.75rem; border:1px solid #E2E8F0; width:22%;">譛画悍讌ｭ逡・& 繝ｦ繝ｼ繧ｹ繧ｱ繝ｼ繧ｹ</th>
+            <th style="padding:0.6rem 0.75rem; border:1px solid #E2E8F0; width:28%;">繝ｦ繝ｼ繧ｹ繧ｱ繝ｼ繧ｹ蟶ょｴ讎りｦ・/th>
+            <th style="padding:0.6rem 0.75rem; border:1px solid #E2E8F0; width:22%;">2030蟷ｴ縺ｫ蜷代￠縺溷だ蜷・& 逅・罰</th>
+            <th style="padding:0.6rem 0.75rem; border:1px solid #E2E8F0; width:14%;">荳ｻ隕√・繝ｬ繝ｼ繝､繝ｼ(荳贋ｽ・遉ｾ)</th>
+            <th style="padding:0.6rem 0.75rem; border:1px solid #E2E8F0; width:14%;">髢｢騾｣蟶ょｴ隕乗ｨ｡</th>
+            <th style="padding:0.6rem 0.75rem; border:1px solid #E2E8F0; text-align:center;">騾｣謳ｺ</th>
+          </tr>
+        </thead>
+        <tbody>
+  `;
+
+  matrix.forEach(row => {
+    const players = (row.top_players || []).map(p => `<span style="display:inline-block; background:#F1F5F9; border:1px solid #CBD5E1; padding:0.15rem 0.4rem; border-radius:4px; font-size:0.75rem; margin:0.1rem;">${p}</span>`).join(' ');
+    const isUp = (row.trend_2030 || '').includes('諡｡螟ｧ');
+    const trendBadge = isUp 
+      ? `<span style="background:#D1FAE5; color:#047857; font-weight:700; padding:0.2rem 0.5rem; border-radius:9999px; font-size:0.75rem;">嶋 諡｡螟ｧ蛯ｾ蜷・/span>`
+      : `<span style="background:#F3F4F6; color:#4B5563; font-weight:600; padding:0.2rem 0.5rem; border-radius:9999px; font-size:0.75rem;">筐｡・・螳牙ｮ・螟牙喧</span>`;
+
+    mainHtml += `
+      <tr style="border-bottom:1px solid #E2E8F0;">
+        <td style="padding:0.65rem 0.75rem; border:1px solid #E2E8F0; vertical-align:top;">
+          <div style="font-weight:700; color:#1E293B; font-size:0.85rem; margin-bottom:0.2rem;">${row.industry}</div>
+          <div style="font-size:0.75rem; color:#2563EB; font-weight:500;">${row.use_case}</div>
+        </td>
+        <td style="padding:0.65rem 0.75rem; border:1px solid #E2E8F0; vertical-align:top; color:#334155; line-height:1.4;">
+          ${row.market_overview}
+        </td>
+        <td style="padding:0.65rem 0.75rem; border:1px solid #E2E8F0; vertical-align:top;">
+          <div style="margin-bottom:0.35rem;">${trendBadge}</div>
+          <div style="font-size:0.75rem; color:#475569; line-height:1.35;">${row.trend_reason || ''}</div>
+        </td>
+        <td style="padding:0.65rem 0.75rem; border:1px solid #E2E8F0; vertical-align:top;">
+          ${players}
+        </td>
+        <td style="padding:0.65rem 0.75rem; border:1px solid #E2E8F0; vertical-align:top; font-weight:700; color:#0F172A;">
+          ${row.market_size}
+        </td>
+        <td style="padding:0.65rem 0.75rem; border:1px solid #E2E8F0; text-align:center; vertical-align:middle;">
+          <button onclick="linkToSection('${row.industry.replace(/'/g, "\\'")}', '${row.use_case.replace(/'/g, "\\'")}')" style="background:#2563EB; color:#fff; border:none; border-radius:6px; padding:0.35rem 0.65rem; font-size:0.75rem; font-weight:600; cursor:pointer; white-space:nowrap; box-shadow:0 1px 2px rgba(0,0,0,0.05);">
+            蛻・梵縺ｫ霑ｽ蜉 筐・          </button>
+        </td>
+      </tr>
+    `;
+  });
+
+  mainHtml += `</tbody></table></div>`;
+
+  if (containerMain) containerMain.innerHTML = mainHtml;
+  if (containerSide) containerSide.innerHTML = `<div style="font-size:0.75rem; color:#059669; font-weight:600;">笨・蟶ょｴ隱ｿ譟ｻ螳御ｺ・(${matrix.length}讌ｭ逡後Μ繧ｹ繝医い繝・・)</div>`;
+}
+
+function linkToSection(industry, useCase) {
+  const sol = document.getElementById("marketCharInput").value.trim() || "AI蟶ょｴ隱ｿ譟ｻ縺九ｉ騾｣謳ｺ縺励◆謠先｡医た繝ｪ繝･繝ｼ繧ｷ繝ｧ繝ｳ";
+  const criteria = document.getElementById("marketAdditionalCriteria").value.trim();
+  const solDesc = criteria ? `${sol} 縲仙━蜈郁ｦ∽ｻｶ: ${criteria}縲疏 : sol;
+  addSectionCard(industry, useCase, solDesc);
+  showToast(`縲・{industry} (${useCase})縲阪ｒ繧ｿ繝ｼ繧ｲ繝・ヨ蛻・梵繧ｻ繧ｯ繧ｷ繝ｧ繝ｳ縺ｫ霑ｽ蜉縺励∪縺励◆・～);
+}
+
+// Init Default 2 Sections
+window.onload = () => {
+  addSectionCard("FinTech", "荳ｭ蟆丈ｼ∵･ｭ縺ｮ隲区ｱよ嶌蜊ｳ譎ゅヵ繧｡繧ｯ繧ｿ繝ｪ繝ｳ繧ｰ", "AI荳惹ｿ｡蟇ｩ譟ｻ縺ｨ閾ｪ蜍戊ｲｷ蜿悶・繝ｩ繝・ヨ繝輔か繝ｼ繝");
+  addSectionCard("繧ｵ繝励Λ繧､繝√ぉ繝ｼ繝ｳ", "蜿礼匱豕ｨ繝・・繧ｿ縺ｮ蜿ｯ隕門喧縺ｨ蝨ｨ蠎ｫ譛驕ｩ蛹・, "繧ｵ繝励Λ繧､繝√ぉ繝ｼ繝ｳ雉・≡郢ｰ繧贋ｺ域ｸｬ繝ｻ豎ｺ貂亥渕逶､");
+  runAiAnalysis();
+};
+</script>
+</body>
+</html>

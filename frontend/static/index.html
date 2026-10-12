@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>B2B Target Scout & Interview Strategist (AI Discovery Edition)</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Material+Symbols+Outlined">
 <style>
@@ -269,7 +272,7 @@
     <span class="material-symbols-outlined">auto_awesome</span>
     B2B Target Scout & Interview Strategist
   </h1>
-  <span class="badge">Gemini 3.6 Flash Engine</span>
+  <span class="badge" style="background:#10B981; font-weight:700;">v1.3.0 最新版 (反復調整機能・全セクション削除対応)</span>
 </header>
 
 <div class="dashboard">
@@ -305,13 +308,23 @@
     <!-- Market Research Section -->
     <div class="pane-title" style="margin-top: 1rem;">
       <span class="material-symbols-outlined">insights</span>
-      AI 市場調査 (ソリューション特性)
+      AI 市場調査 & 企業選定条件
     </div>
-    <div style="display:flex; flex-direction:column; gap:0.5rem;">
-      <textarea id="marketCharInput" placeholder="ソリューションの特性・強みを入力..." rows="3" style="padding:0.5rem; border:1px solid var(--border-color); border-radius:6px;"></textarea>
-      <button id="btnMarketResearch" class="btn btn-secondary btn-sm" style="width:100%; border:1px dashed #CBD5E1;">
+    <div style="display:flex; flex-direction:column; gap:0.6rem;">
+      <div>
+        <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted); margin-bottom:0.2rem; display:block;">① ソリューション特性・強み</label>
+        <textarea id="marketCharInput" placeholder="例: AIを用いた受発注データの可視化と在庫資金繰り最適化..." rows="2" style="width:100%; padding:0.5rem; border:1px solid var(--border-color); border-radius:6px; font-size:0.8rem;"></textarea>
+      </div>
+      <div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.2rem;">
+          <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted);">② 追加の選定条件・優先要件 (反復調整用)</label>
+          <span style="font-size:0.7rem; color:#2563EB; cursor:pointer; text-decoration:underline;" onclick="setSampleCriteria()">例を入力</span>
+        </div>
+        <textarea id="marketAdditionalCriteria" placeholder="例: ロボットまたはAIプラットフォームを構築しているメーカーを優先、自律化を推進する企業、等..." rows="2" style="width:100%; padding:0.5rem; border:1px solid var(--border-color); border-radius:6px; font-size:0.8rem;"></textarea>
+      </div>
+      <button id="btnMarketResearch" class="btn btn-primary btn-sm" style="width:100%;">
         <span class="material-symbols-outlined">analytics</span>
-        AI 市場調査を実行
+        条件を反映して市場調査を実行 / 再調整
       </button>
     </div>
     <div id="marketResearchResults" style="margin-top:0.75rem; overflow-x:auto;"></div>
@@ -319,6 +332,18 @@
 
   <!-- PANE 2: VENN DIAGRAM & AI GENERATED CATALOG -->
   <main class="pane-center">
+    <!-- Market Research Matrix Card -->
+    <section class="venn-card" id="marketResearchSectionCard" style="display: none; margin-bottom: 1.5rem; background: #ffffff; border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem;">
+      <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <div class="card-title" style="font-weight: 700; font-size: 1.05rem; color: #1E293B; display: flex; align-items: center; gap: 0.5rem;">
+          <span class="material-symbols-outlined" style="color: #2563EB;">analytics</span>
+          AI 市場調査マトリックス結果（ソリューション特性別）
+        </div>
+        <span class="badge" style="background: #2563EB; color: #fff; padding: 0.25rem 0.6rem; border-radius: 9999px; font-size: 0.75rem;">Gemini 2.5 Flash 調査</span>
+      </div>
+      <div id="marketResearchResultsMain"></div>
+    </section>
+
     <!-- Venn Diagram Card -->
     <section class="venn-card">
       <div class="card-header">
@@ -427,7 +452,7 @@ function addSectionCard(domain = "", useCase = "", solution = "") {
   card.innerHTML = `
     <div class="section-header">
       <span>セクション ${sectionCount}</span>
-      ${sectionCount > 1 ? `<button class="btn-remove-sec" onclick="removeSectionCard(${sectionCount})"><span class="material-symbols-outlined" style="font-size: 0.9rem;">delete</span>削除</button>` : ''}
+      <button class="btn-remove-sec" onclick="removeSectionCard(${sectionCount})"><span class="material-symbols-outlined" style="font-size: 0.9rem;">delete</span>削除</button>
     </div>
     <div class="form-group">
       <label>分野 (Domain)</label>
@@ -674,6 +699,144 @@ document.getElementById("btnCopyEmail").onclick = () => {
 
 document.getElementById("btnAddSection").onclick = () => addSectionCard();
 document.getElementById("btnAnalyze").onclick = runAiAnalysis;
+document.getElementById("btnMarketResearch").onclick = runMarketResearch;
+
+function setSampleCriteria() {
+  const el = document.getElementById("marketAdditionalCriteria");
+  if (el) {
+    el.value = "ロボットまたはAIプラットフォームを構築しているメーカーを優先し、自律化を推進する先進企業を抽出";
+    showToast("サンプル条件を設定しました。");
+  }
+}
+
+async function runMarketResearch() {
+  const charInput = document.getElementById("marketCharInput").value.trim();
+  const criteriaInput = document.getElementById("marketAdditionalCriteria").value.trim();
+  const sections = getSectionsData();
+  const solText = charInput || (sections.map(s => `${s.domain}: ${s.solution}`).join(" / "));
+  
+  if (!solText && !criteriaInput) {
+    showToast("ソリューション特性または選定条件を入力してください。");
+    return;
+  }
+
+  const containerSide = document.getElementById("marketResearchResults");
+  const containerMain = document.getElementById("marketResearchResultsMain");
+  const sectionCard = document.getElementById("marketResearchSectionCard");
+
+  if (sectionCard) sectionCard.style.display = "block";
+  if (containerSide) containerSide.innerHTML = `<div style="padding:0.75rem; font-size:0.8rem; color:#475569;">Gemini AIが市場調査・条件反映を実行中...</div>`;
+  if (containerMain) containerMain.innerHTML = `<div style="padding:1.5rem; text-align:center; font-size:0.9rem; color:#475569;"><span class="material-symbols-outlined" style="vertical-align:middle; animation:spin 1s infinite linear;">sync</span> Gemini AIが最新市場データ（特性×追加優先条件）を分析・生成中...</div>`;
+  
+  showToast("AI市場調査（追加条件反映）を実行中...");
+
+  try {
+    const res = await fetch("/api/market-research", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ 
+        solution_characteristics: solText,
+        additional_criteria: criteriaInput
+      })
+    });
+    const data = await res.json();
+    renderMarketResearchData(data);
+  } catch (err) {
+    console.error("Market research error:", err);
+    if (containerSide) containerSide.innerHTML = `<div style="color:red; font-size:0.8rem;">調査エラーが発生しました。</div>`;
+    if (containerMain) containerMain.innerHTML = `<div style="color:red; font-size:0.8rem;">調査エラーが発生しました。</div>`;
+  }
+}
+
+function renderMarketResearchData(data) {
+  const containerSide = document.getElementById("marketResearchResults");
+  const containerMain = document.getElementById("marketResearchResultsMain");
+  const sectionCard = document.getElementById("marketResearchSectionCard");
+
+  const matrix = (data && (data.market_research_matrix || data.matrix)) || [];
+
+  if (matrix.length === 0) {
+    const errHtml = `<div style="padding:0.8rem; font-size:0.8rem; color:#DC2626; background:#FEE2E2; border-radius:6px;">市場調査データが取得できませんでした。時間をおいて再実行してください。</div>`;
+    if (containerSide) containerSide.innerHTML = errHtml;
+    if (containerMain) containerMain.innerHTML = errHtml;
+    return;
+  }
+
+  if (sectionCard) sectionCard.style.display = "block";
+
+  const appliedCriteriaHtml = data.additional_criteria 
+    ? `<div style="margin-top:0.4rem; font-size:0.75rem; color:#1E3A8A; font-weight:600;">🎯 <b>反映された追加選定条件</b>: ${data.additional_criteria}</div>` 
+    : '';
+
+  // Build full rich main table HTML for Pane 2
+  let mainHtml = `
+    <div style="font-size:0.85rem; background:#EFF6FF; border:1px solid #BFDBFE; padding:0.85rem 1rem; border-radius:8px; margin-bottom:1rem; color:#1E40AF; line-height:1.5;">
+      <div>💡 <b>AI市場調査インサイト</b>: ${data.summary_insight || ''}</div>
+      ${appliedCriteriaHtml}
+    </div>
+    <div style="overflow-x: auto;">
+      <table style="width:100%; border-collapse:collapse; font-size:0.8rem; background:#fff; border:1px solid #E2E8F0; border-radius:8px; overflow:hidden;">
+        <thead>
+          <tr style="background:#F8FAFC; text-align:left; color:#334155; font-size:0.8rem;">
+            <th style="padding:0.6rem 0.75rem; border:1px solid #E2E8F0; width:22%;">有望業界 & ユースケース</th>
+            <th style="padding:0.6rem 0.75rem; border:1px solid #E2E8F0; width:28%;">ユースケース市場概要</th>
+            <th style="padding:0.6rem 0.75rem; border:1px solid #E2E8F0; width:22%;">2030年に向けた傾向 & 理由</th>
+            <th style="padding:0.6rem 0.75rem; border:1px solid #E2E8F0; width:14%;">主要プレーヤー(上位3社)</th>
+            <th style="padding:0.6rem 0.75rem; border:1px solid #E2E8F0; width:14%;">関連市場規模</th>
+            <th style="padding:0.6rem 0.75rem; border:1px solid #E2E8F0; text-align:center;">連携</th>
+          </tr>
+        </thead>
+        <tbody>
+  `;
+
+  matrix.forEach(row => {
+    const players = (row.top_players || []).map(p => `<span style="display:inline-block; background:#F1F5F9; border:1px solid #CBD5E1; padding:0.15rem 0.4rem; border-radius:4px; font-size:0.75rem; margin:0.1rem;">${p}</span>`).join(' ');
+    const isUp = (row.trend_2030 || '').includes('拡大');
+    const trendBadge = isUp 
+      ? `<span style="background:#D1FAE5; color:#047857; font-weight:700; padding:0.2rem 0.5rem; border-radius:9999px; font-size:0.75rem;">📈 拡大傾向</span>`
+      : `<span style="background:#F3F4F6; color:#4B5563; font-weight:600; padding:0.2rem 0.5rem; border-radius:9999px; font-size:0.75rem;">➡️ 安定/変化</span>`;
+
+    mainHtml += `
+      <tr style="border-bottom:1px solid #E2E8F0;">
+        <td style="padding:0.65rem 0.75rem; border:1px solid #E2E8F0; vertical-align:top;">
+          <div style="font-weight:700; color:#1E293B; font-size:0.85rem; margin-bottom:0.2rem;">${row.industry}</div>
+          <div style="font-size:0.75rem; color:#2563EB; font-weight:500;">${row.use_case}</div>
+        </td>
+        <td style="padding:0.65rem 0.75rem; border:1px solid #E2E8F0; vertical-align:top; color:#334155; line-height:1.4;">
+          ${row.market_overview}
+        </td>
+        <td style="padding:0.65rem 0.75rem; border:1px solid #E2E8F0; vertical-align:top;">
+          <div style="margin-bottom:0.35rem;">${trendBadge}</div>
+          <div style="font-size:0.75rem; color:#475569; line-height:1.35;">${row.trend_reason || ''}</div>
+        </td>
+        <td style="padding:0.65rem 0.75rem; border:1px solid #E2E8F0; vertical-align:top;">
+          ${players}
+        </td>
+        <td style="padding:0.65rem 0.75rem; border:1px solid #E2E8F0; vertical-align:top; font-weight:700; color:#0F172A;">
+          ${row.market_size}
+        </td>
+        <td style="padding:0.65rem 0.75rem; border:1px solid #E2E8F0; text-align:center; vertical-align:middle;">
+          <button onclick="linkToSection('${row.industry.replace(/'/g, "\\'")}', '${row.use_case.replace(/'/g, "\\'")}')" style="background:#2563EB; color:#fff; border:none; border-radius:6px; padding:0.35rem 0.65rem; font-size:0.75rem; font-weight:600; cursor:pointer; white-space:nowrap; box-shadow:0 1px 2px rgba(0,0,0,0.05);">
+            分析に追加 ➔
+          </button>
+        </td>
+      </tr>
+    `;
+  });
+
+  mainHtml += `</tbody></table></div>`;
+
+  if (containerMain) containerMain.innerHTML = mainHtml;
+  if (containerSide) containerSide.innerHTML = `<div style="font-size:0.75rem; color:#059669; font-weight:600;">✓ 市場調査完了 (${matrix.length}業界リストアップ)</div>`;
+}
+
+function linkToSection(industry, useCase) {
+  const sol = document.getElementById("marketCharInput").value.trim() || "AI市場調査から連携した提案ソリューション";
+  const criteria = document.getElementById("marketAdditionalCriteria").value.trim();
+  const solDesc = criteria ? `${sol} 【優先要件: ${criteria}】` : sol;
+  addSectionCard(industry, useCase, solDesc);
+  showToast(`「${industry} (${useCase})」をターゲット分析セクションに追加しました！`);
+}
 
 // Init Default 2 Sections
 window.onload = () => {

@@ -400,10 +400,12 @@ def generate_target_companies_by_ai(
 
 
 def perform_ai_market_research(
-    solution_characteristics: str
+    solution_characteristics: str,
+    additional_criteria: str = ""
 ) -> Dict[str, Any]:
     """
-    与えられたソリューション特性・強みに基づき、Gemini 2.5 Flashを活用して縦軸（ソリューション特性）×横軸（各業界・ユースケース）の市場調査を実施します。
+    与えられたソリューション特性・強み、および追加の選定条件・優先要件（例：ロボットまたはAIプラットフォームを構築しているメーカー優先等）に基づき、
+    Gemini 2.5 Flashを活用して縦軸（ソリューション特性×追加要件）×横軸（各業界・ユースケース）の市場調査を実施します。
     2030年に向けた市場傾向（理由付き）、上位3社メインプレーヤー、関連市場規模（億円/ドル）をJSON形式で出力・生成します。
     """
     if not solution_characteristics or not solution_characteristics.strip():
@@ -420,19 +422,22 @@ def perform_ai_market_research(
         else:
             client = genai.Client(vertexai=True, project=project, location=location)
 
+        criteria_clause = f"\n■ 追加の選定条件・優先要件 (反復調整用):\n{additional_criteria}" if additional_criteria and additional_criteria.strip() else ""
+
         prompt = f"""貴方はB2B市場調査および事業戦略コンサルタントの最高責任者です。
-入力された以下の「ソリューションの特性・強み」に基づき、最も親和性が高く有望な業界およびユースケースを4〜6件抽出・調査し、結果をJSON形式で出力してください。
+入力された以下の「ソリューションの特性・強み」および「追加の選定条件・優先要件」に基づき、最も親和性が高く有望な業界およびユースケースを4〜6件抽出・調査し、結果をJSON形式で出力してください。
 
 ■ ソリューションの特性・強み:
 {solution_characteristics}
+{criteria_clause}
 
-■ 調査要件:
-1. 縦軸項目: 入力されたソリューション特性に対して最も適した「有望業界（例：製造業、FinTech・金融、EC・流通、医療ヘルスケア、建設・不動産など）」と「具体的ユースケース」をリストアップ。
+■ 調査・選定指示:
+1. 縦軸項目: 入力されたソリューション特性に加え、ユーザーが指定した追加の選定条件（例:「ロボットまたはAIプラットフォームを構築しているメーカーを優先」など）を強く考慮し、最適な「有望業界」と「具体的ユースケース」をリストアップしてください。
 2. 横軸詳細項目: 各業界・ユースケースに対して以下の項目を厳密に調査・推計してください。
    - market_overview: ユースケースの市場概要（2〜3文）
    - trend_2030: 2030年に向けた傾向（「拡大傾向」または「減少傾向」のいずれか）
-   - trend_reason: 2030年に向けた傾向の具体的事情・理由（法改正、人手不足、デジタル化動向など）
-   - top_players: メインプレーヤー上位3社（実在企業名のリスト。例: ["マネーフォワード", "freee", "OLTA"]）
+   - trend_reason: 2030年に向けた傾向の具体的事情・理由（法改正、人手不足、デジタル化、自動化動向など）
+   - top_players: ユーザーの追加選定要件（例: ロボット/AIプラットフォーム構築メーカー等）を満たす実在するメインプレーヤー上位3社（実在企業名リスト。例: ["ファナック", "安川電機", "キーエンス"]、あるいは該当分野の先進企業）
    - market_size: 関連市場規模（例：「約8,500億円 (2026年推計)」）
    - priority_rank: 優先度ランク（"High", "Medium"）
 
@@ -440,16 +445,17 @@ def perform_ai_market_research(
 ```json
 {{
   "solution_characteristics": "{solution_characteristics}",
-  "summary_insight": "AI分析による有望市場サマリーのハイライト",
+  "additional_criteria": "{additional_criteria}",
+  "summary_insight": "AI分析による有望市場サマリーのハイライト（追加条件の反映内容を含む）",
   "market_research_matrix": [
     {{
-      "industry": "FinTech・金融",
-      "use_case": "請求書即時ファクタリング・B2B与信自動化",
-      "market_overview": "中小企業の資金繰り支援およびインボイス制度導入に伴うデジタル決済ファクタリング市場。",
+      "industry": "製造・ロボティクス",
+      "use_case": "自律走行搬送ロボット×受発注連動プラットフォーム",
+      "market_overview": "スマートファクトリーにおける産業ロボットとデータ連動基盤の市場。",
       "trend_2030": "拡大傾向",
-      "trend_reason": "法改正（電帳法・インボイス）と請求書SaaSの普及により、売掛金即時現金化ニーズが急速に高まっているため。",
-      "top_players": ["マネーフォワード", "freee", "OLTA"],
-      "market_size": "約8,500億円 (2026年推計)",
+      "trend_reason": "製造現場の人手不足解消とAI/ロボット自動化の加速に伴い急成長。",
+      "top_players": ["ファナック", "安川電機", "キーエンス"],
+      "market_size": "約1.2兆円",
       "priority_rank": "High"
     }}
   ]
@@ -474,8 +480,10 @@ def perform_ai_market_research(
             return {
                 "status": "success",
                 "solution_characteristics": solution_characteristics,
-                "summary_insight": data.get("summary_insight", "ソリューション特性に合致する有望市場マトリクスが生成されました。"),
-                "matrix": matrix
+                "additional_criteria": additional_criteria,
+                "summary_insight": data.get("summary_insight", "ソリューション特性および追加条件に合致する有望市場マトリクスが生成されました。"),
+                "matrix": matrix,
+                "market_research_matrix": matrix
             }
     except Exception as e:
         print(f"Market Research Gemini API error: {e}")
@@ -517,7 +525,8 @@ def perform_ai_market_research(
         "status": "success",
         "solution_characteristics": solution_characteristics,
         "summary_insight": "ソリューション特性に基づき、FinTech・製造SCM・B2B EC領域における有望市場と2030年動向が分析されました。",
-        "matrix": fallback_matrix
+        "matrix": fallback_matrix,
+        "market_research_matrix": fallback_matrix
     }
 
 
